@@ -1,107 +1,68 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useLanguage } from '../contexts/LanguageContext';
-import { applications, getApplicationsByMonth } from '../data/testData';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { useState } from 'react';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { applications } from '../../data/testData';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
-export default function Home() {
+export default function ApplicationsPage() {
   const { t } = useLanguage();
   const [currentPage, setCurrentPage] = useState(1);
-  const [mounted, setMounted] = useState(false);
-  const itemsPerPage = 5;
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'handled'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const itemsPerPage = 10;
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const filteredApplications = applications
+    .filter(app => {
+      if (statusFilter === 'all') return true;
+      return app.status === statusFilter;
+    })
+    .filter(app => {
+      if (!searchTerm) return true;
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        app.firstName.toLowerCase().includes(searchLower) ||
+        app.lastName.toLowerCase().includes(searchLower) ||
+        app.email.toLowerCase().includes(searchLower)
+      );
+    });
 
-  const monthlyData = getApplicationsByMonth();
-  const pendingApplications = applications.filter(app => app.status === 'pending');
-  const totalPages = Math.ceil(pendingApplications.length / itemsPerPage);
-
-  const chartData = {
-    labels: monthlyData.map(item => item.month),
-    datasets: [
-      {
-        label: t('common.applications'),
-        data: monthlyData.map(item => item.count),
-        borderColor: 'rgb(75, 192, 192)',
-        tension: 0.1,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-      title: {
-        display: true,
-        text: t('common.applications'),
-      },
-    },
-  };
-
-  const paginatedApplications = pendingApplications.slice(
+  const totalPages = Math.ceil(filteredApplications.length / itemsPerPage);
+  const paginatedApplications = filteredApplications.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  if (!mounted) {
-    return null;
-  }
-
   return (
-    <div className="space-y-8">
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-2xl font-bold mb-4">{t('common.dashboard')}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-blue-800">{t('common.totalApplications')}</h3>
-            <p className="text-3xl font-bold text-blue-600">{applications.length}</p>
-          </div>
-          <div className="bg-yellow-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-yellow-800">{t('common.pendingApplications')}</h3>
-            <p className="text-3xl font-bold text-yellow-600">{pendingApplications.length}</p>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-green-800">{t('common.handledApplications')}</h3>
-            <p className="text-3xl font-bold text-green-600">{applications.length - pendingApplications.length}</p>
-          </div>
-        </div>
-        <div className="h-64">
-          <Line data={chartData} options={chartOptions} />
-        </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">{t('common.applications')}</h1>
+        <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          {t('common.addNew')}
+        </button>
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">{t('common.pendingApplications')}</h2>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-            {t('common.addNew')}
-          </button>
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder={t('common.search')}
+              className="w-full px-4 py-2 border rounded-lg"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-4">
+            <select
+              className="px-4 py-2 border rounded-lg"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'pending' | 'handled')}
+            >
+              <option value="all">{t('common.all')}</option>
+              <option value="pending">{t('common.pending')}</option>
+              <option value="handled">{t('common.handled')}</option>
+            </select>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -118,6 +79,9 @@ export default function Home() {
                   {t('common.email')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {t('common.status')}
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   {t('common.createdAt')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -131,6 +95,17 @@ export default function Home() {
                   <td className="px-6 py-4 whitespace-nowrap">{app.firstName}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{app.lastName}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{app.email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        app.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-green-100 text-green-800'
+                      }`}
+                    >
+                      {t(`common.${app.status}`)}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {new Date(app.createdAt).toLocaleDateString()}
                   </td>
@@ -167,4 +142,4 @@ export default function Home() {
       </div>
     </div>
   );
-}
+} 
