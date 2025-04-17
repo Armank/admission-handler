@@ -17,6 +17,7 @@ export const translations = {
             pending: 'Pending',
             handled: 'Handled',
             all: 'All',
+            search: 'Search...',
         },
     },
     ru: {
@@ -37,6 +38,7 @@ export const translations = {
             pending: 'В ожидании',
             handled: 'Обработано',
             all: 'Все',
+            search: 'Search...',
         },
     },
     kz: {
@@ -57,6 +59,7 @@ export const translations = {
             pending: 'Күтудегі',
             handled: 'Өңделген',
             all: 'Барлығы',
+            search: 'Іздеу...',
         },
     },
 };
